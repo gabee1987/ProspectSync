@@ -222,6 +222,49 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+        public bool DownloadAndOverwrite( string parentFolderId, string fileName, string localFilePath, out string message )
+        {
+            try
+            {
+                string fileId = GetFileIdByName( fileName );
+
+                if ( fileId == null )
+                {
+                    message = "Error: File not found on Google Drive.";
+                    return false;
+                }
+
+                var request = _driveService.Files.Get( fileId );
+                var stream = new MemoryStream();
+                request.Download( stream );
+
+                // Get last modified time of the existing local file
+                DateTime? localFileLastModified = null;
+                if ( File.Exists( localFilePath ) )
+                {
+                    localFileLastModified = File.GetLastWriteTime( localFilePath );
+                }
+
+                // Overwrite the existing local file
+                using ( FileStream file = new FileStream( localFilePath, FileMode.Create, FileAccess.Write ) )
+                {
+                    stream.WriteTo( file );
+                }
+
+                // Get last modified time of the downloaded file
+                DateTime downloadedFileLastModified = File.GetLastWriteTime( localFilePath );
+
+                message = $"Download successful!\nOriginal file last modified: {localFileLastModified?.ToString( "g" ) ?? "File did not exist previously"}\nDownloaded file last modified: {downloadedFileLastModified:g}";
+
+                return true;
+            }
+            catch ( Exception ex )
+            {
+                message = $"Error downloading: {ex.Message}";
+                return false;
+            }
+        }
+
         public string GetFolderIdByName( string folderName )
         {
             try

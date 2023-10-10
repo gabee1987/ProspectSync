@@ -45,7 +45,18 @@ namespace ProspectSync
 
         private void DownloadButton_Click( object sender, RoutedEventArgs e )
         {
-            // Add logic for downloading the file
+            if ( string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
+            {
+                MessagesTextBox.Text = "Steam ID not detected yet.";
+                return;
+            }
+
+            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ),
+                "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
+
+            bool success = _driveService.DownloadAndOverwrite( "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3", "Nebula Nokedli.json", localFilePath, out string message );
+
+            MessagesTextBox.Text = message;
         }
 
         private void UploadButton_Click( object sender, RoutedEventArgs e )
