@@ -33,16 +33,32 @@ namespace ProspectSync
 
         private void CheckButton_Click( object sender, RoutedEventArgs e )
         {
-            // Example logic for the Check button. You can add the logic you need.
+            // Fetch the list of files.
             var files = _driveService.ListFiles();
+
+            // Use a StringBuilder for efficiency when concatenating strings.
+            StringBuilder messageBuilder = new StringBuilder();
+
             if ( files != null && files.Count > 0 )
             {
-                MessageBox.Show( $"Found {files.Count} file(s)." );
+                messageBuilder.AppendLine( $"Found {files.Count} file(s):" );
+
+                // Iterate through each file and append its name to the message.
+                foreach ( var file in files )
+                {
+                    if ( file.MimeType != "application/vnd.google-apps.folder" )
+                    {
+                        messageBuilder.AppendLine( file.Name );
+                    }
+                }
             }
             else
             {
-                MessageBox.Show( "No files found." );
+                messageBuilder.AppendLine( "No files found." );
             }
+
+            // Set the text of the MessagesTextBox to the built message.
+            MessagesTextBox.Text = messageBuilder.ToString();
         }
 
         private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )

@@ -37,7 +37,7 @@
         </StackPanel>
 
         <!-- Messages Section -->
-        <TextBox Name="MessagesTextBox" Grid.Row="3" Margin="10" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
+        <TextBox Name="MessagesTextBox" Grid.Row="3" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
 
     </Grid>
 </Window>
