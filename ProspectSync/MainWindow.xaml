@@ -52,7 +52,7 @@
             <!-- Centered content for password entry -->
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <PasswordBox Name="PasswordInputBox" Width="200" Height="30" MaxLength="50" Style="{StaticResource RoundedPasswordBox}" />
-                <Button Content="Unlock" Click="UnlockButton_Click" Width="80" Margin="10,0,0,0" Style="{StaticResource AppButtonStyle}" />
+                <Button Content="Unlock" Click="UnlockButton_Click" Width="80" Margin="10,0,0,0" Style="{StaticResource AppButtonStyle}" IsDefault="True" />
                 <TextBox Name="PasswordMessageTextBox" Grid.Row="4" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
             </StackPanel>
         </Grid>
