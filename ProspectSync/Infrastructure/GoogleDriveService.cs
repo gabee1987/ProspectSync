@@ -6,11 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ProspectSync.Infrastructure
 {
     public class GoogleDriveService
     {
+
+        #region Init
         private readonly DriveService _driveService;
 
         public GoogleDriveService( string serviceAccountPath )
@@ -28,11 +32,128 @@ namespace ProspectSync.Infrastructure
                 ApplicationName = "IcarusSaveShare",
             } );
         }
+        #endregion
 
-        public Google.Apis.Drive.v3.Data.File GetFileInfo( string fileName )
+        #region Async methods
+        public async Task<Google.Apis.Drive.v3.Data.File> GetFileInfoAsync( string fileName )
         {
             var request = _driveService.Files.List();
-            request.Q = $"name = '{fileName}'";  // Query to search for a file by name
+            request.Q      = $"name = '{fileName}'";
+            request.Fields = "files(id, name, modifiedTime)";
+
+            var files = await request.ExecuteAsync();
+            return files.Files?.FirstOrDefault();
+        }
+
+        public async Task<string> GetFileIdByNameAsync( string fileName )
+        {
+            try
+            {
+                var request = _driveService.Files.List();
+                request.Q      = $"name='{fileName}' and trashed=false";
+                request.Fields = "files(id, name)";
+                var result = await request.ExecuteAsync();
+
+                return result.Files?.FirstOrDefault()?.Id;
+            }
+            catch ( Exception ex )
+            {
+                Console.WriteLine( ex.Message );
+                return null;
+            }
+        }
+
+        public async Task<bool> UploadAndOverwriteAsync( string localFilePath, string parentFolderId )
+        {
+            try
+            {
+                string fileName = Path.GetFileName( localFilePath );
+                string fileId = await GetFileIdByNameAsync( fileName );
+
+                if ( fileId != null )
+                {
+                    using ( var fileStream = new FileStream( localFilePath, FileMode.Open ) )
+                    {
+                        var updateRequest = _driveService.Files.Update( new Google.Apis.Drive.v3.Data.File(), fileId, fileStream, "application/octet-stream" );
+                        await updateRequest.UploadAsync();
+                    }
+                }
+                else
+                {
+                    var newFileMetadata = new Google.Apis.Drive.v3.Data.File()
+                    {
+                        Name = fileName,
+                        Parents = new List<string> { parentFolderId }
+                    };
+
+                    using ( var fileStream = new FileStream( localFilePath, FileMode.Open ) )
+                    {
+                        var createRequest = _driveService.Files.Create( newFileMetadata, fileStream, "application/octet-stream" );
+                        await createRequest.UploadAsync();
+                    }
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<(bool Success, string Message)> DownloadAndOverwriteAsync( string parentFolderId, string fileName, string localFilePath )
+        {
+            try
+            {
+                string fileId = await GetFileIdByNameAsync( fileName );
+                if ( fileId == null )
+                    return (false, "Error: File not found on Google Drive.");
+
+                var request = _driveService.Files.Get( fileId );
+                var stream = new MemoryStream();
+                await request.DownloadAsync( stream );
+
+                DateTime? localFileLastModified = File.Exists( localFilePath ) ? (DateTime?)File.GetLastWriteTime( localFilePath ) : null;
+
+                using ( FileStream file = new FileStream( localFilePath, FileMode.Create, FileAccess.Write ) )
+                    stream.WriteTo( file );
+
+                DateTime downloadedFileLastModified = File.GetLastWriteTime( localFilePath );
+
+                string message = $"Download successful!\nOriginal file last modified: {localFileLastModified?.ToString( "g" ) ?? "File did not exist previously"}\nDownloaded file last modified: {downloadedFileLastModified:g}";
+                return (true, message);
+            }
+            catch ( Exception ex )
+            {
+                return (false, $"Error downloading: {ex.Message}");
+            }
+        }
+
+        public async Task<string> GetFolderIdByNameAsync( string folderName )
+        {
+            try
+            {
+                var request = _driveService.Files.List();
+                request.Q      = $"mimeType='application/vnd.google-apps.folder' and name='{folderName}' and trashed=false";
+                request.Fields = "files(id, name)";
+                var result = await request.ExecuteAsync();
+
+                return result.Files?.FirstOrDefault()?.Id;
+            }
+            catch ( Exception ex )
+            {
+                Console.WriteLine( ex.Message );
+                return null;
+            }
+        }
+        #endregion
+
+
+        #region Sync methods
+        public Google.Apis.Drive.v3.Data.File GetFileInfo( string fileName )
+        {
+            var request    = _driveService.Files.List();
+            request.Q      = $"name = '{fileName}'";  // Query to search for a file by name
             request.Fields = "files(id, name, modifiedTime)";  // We only want to fetch specific fields for the file
 
             var files = request.Execute().Files;
@@ -45,6 +166,7 @@ namespace ProspectSync.Infrastructure
             return null;
         }
 
+        
         public string GetFileIdByName( string fileName )
         {
             try
@@ -71,6 +193,7 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+        
         private byte[] Compress( byte[] data )
         {
             using ( var compressedStream = new MemoryStream() )
@@ -81,6 +204,7 @@ namespace ProspectSync.Infrastructure
                 return compressedStream.ToArray();
             }
         }
+        
 
         public void UploadFileWithBackup( string localFilePath, string parentFolderId )
         {
@@ -145,6 +269,7 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+
         public bool UploadAndOverwrite( string localFilePath, string parentFolderId )
         {
             try
@@ -182,6 +307,7 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+        
         public bool UploadFile( string localFilePath, string driveFolderPath, string driveFileName )
         {
             try
@@ -222,6 +348,7 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+
         public bool DownloadAndOverwrite( string parentFolderId, string fileName, string localFilePath, out string message )
         {
             try
@@ -235,7 +362,7 @@ namespace ProspectSync.Infrastructure
                 }
 
                 var request = _driveService.Files.Get( fileId );
-                var stream = new MemoryStream();
+                var stream  = new MemoryStream();
                 request.Download( stream );
 
                 // Get last modified time of the existing local file
@@ -265,14 +392,15 @@ namespace ProspectSync.Infrastructure
             }
         }
 
+        
         public string GetFolderIdByName( string folderName )
         {
             try
             {
-                var request = _driveService.Files.List();
-                request.Q = $"mimeType='application/vnd.google-apps.folder' and name='{folderName}' and trashed=false";
+                var request    = _driveService.Files.List();
+                request.Q      = $"mimeType='application/vnd.google-apps.folder' and name='{folderName}' and trashed=false";
                 request.Fields = "files(id, name)";
-                var result = request.Execute();
+                var result     = request.Execute();
 
                 if ( result != null && result.Files.Count > 0 )
                 {
@@ -290,9 +418,9 @@ namespace ProspectSync.Infrastructure
                 return null;
             }
         }
+        #endregion
 
-
-
+        #region Dev methods
         // For test only
         public IList<Google.Apis.Drive.v3.Data.File> ListFiles()
         {
@@ -303,5 +431,6 @@ namespace ProspectSync.Infrastructure
             var result = request.Execute();
             return result.Files;
         }
+        #endregion
     }
 }

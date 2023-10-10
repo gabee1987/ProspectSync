@@ -28,22 +28,22 @@ namespace ProspectSync
             GetCurrentSteamUser();
         }
 
-        private void CheckButton_Click( object sender, RoutedEventArgs e )
+        private async void CheckButton_Click( object sender, RoutedEventArgs e )
         {
-            string message = _appService.CheckForNewerVersion( _driveService, CurrentSteamUserID );
+            string message       = await _appService.CheckForNewerVersionAsync( _driveService, CurrentSteamUserID );
             MessagesTextBox.Text = message;
         }
 
-        private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
+        private async void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
         {
             if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
-                string saveInfo = _appService.GetLocalSaveInfo( CurrentSteamUserID );
+                string saveInfo      = await _appService.GetLocalSaveInfoAsync( CurrentSteamUserID );
                 MessagesTextBox.Text = saveInfo;
             }
         }
 
-        private void DownloadButton_Click( object sender, RoutedEventArgs e )
+        private async void DownloadButton_Click( object sender, RoutedEventArgs e )
         {
             if ( string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
@@ -51,15 +51,12 @@ namespace ProspectSync
                 return;
             }
 
-            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ),
-                "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
-
-            bool success = _driveService.DownloadAndOverwrite( "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3", "Nebula Nokedli.json", localFilePath, out string message );
-
-            MessagesTextBox.Text = message;
+            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
+            var result           = await _driveService.DownloadAndOverwriteAsync( "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3", "Nebula Nokedli.json", localFilePath );
+            MessagesTextBox.Text = result.Message;
         }
 
-        private void UploadButton_Click( object sender, RoutedEventArgs e )
+        private async void UploadButton_Click( object sender, RoutedEventArgs e )
         {
             if ( string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
@@ -70,16 +67,16 @@ namespace ProspectSync
             string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ),
                 "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
 
-            bool success = _driveService.UploadAndOverwrite( localFilePath, "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3" );
+            bool success = await _driveService.UploadAndOverwriteAsync( localFilePath, "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3" );
 
             MessagesTextBox.Text = success ? "Upload successful!" : "Error during upload.";
         }
 
-        private void BackupButton_Click( object sender, RoutedEventArgs e )
+        private async void BackupButton_Click( object sender, RoutedEventArgs e )
         {
             if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
-                string backupMessage = _appService.CreateBackup( CurrentSteamUserID );
+                string backupMessage = await _appService.CreateBackupAsync( CurrentSteamUserID );
                 MessagesTextBox.Text = backupMessage;
             }
             else
@@ -100,36 +97,6 @@ namespace ProspectSync
             {
                 UserInfo.Text = userInfoDict["Error"];
             }
-        }
-
-        private void ListFileFromFolder()
-        {
-            // Fetch the list of files.
-            var files = _driveService.ListFiles();
-
-            // Use a StringBuilder for efficiency when concatenating strings.
-            StringBuilder messageBuilder = new StringBuilder();
-
-            if ( files != null && files.Count > 0 )
-            {
-                messageBuilder.AppendLine( $"Found {files.Count} file(s):" );
-
-                // Iterate through each file and append its name to the message.
-                foreach ( var file in files )
-                {
-                    if ( file.MimeType != "application/vnd.google-apps.folder" )
-                    {
-                        messageBuilder.AppendLine( file.Name );
-                    }
-                }
-            }
-            else
-            {
-                messageBuilder.AppendLine( "No files found." );
-            }
-
-            // Set the text of the MessagesTextBox to the built message.
-            MessagesTextBox.Text = messageBuilder.ToString();
         }
     }
 }

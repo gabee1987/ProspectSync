@@ -5,11 +5,93 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ProspectSync.services
 {
     internal class AppService
     {
+        #region Async methods
+        public async Task<string> GetLocalSaveInfoAsync( string steamUserId )
+        {
+            if ( string.IsNullOrWhiteSpace( steamUserId ) )
+                return "Steam ID not detected yet.";
+
+            string filePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+
+            if ( !File.Exists( filePath ) )
+                return "Error reading save file.";
+
+            string data          = await File.ReadAllTextAsync( filePath );
+            JObject saveInfo     = JObject.Parse( data );
+            JObject prospectInfo = (JObject)saveInfo["ProspectInfo"];
+
+            int elapsedTime = prospectInfo["ElapsedTime"].Value<int>();
+            int hours       = elapsedTime / 3600;
+            int minutes     = ( elapsedTime % 3600 ) / 60;
+            int seconds     = elapsedTime % 60;
+
+            StringBuilder displayMessage = new StringBuilder();
+            displayMessage.AppendLine( $"Prospect Name: {prospectInfo["ProspectID"].Value<string>()}" );
+            displayMessage.AppendLine( $"Difficulty: {prospectInfo["Difficulty"].Value<string>()}" );
+            displayMessage.AppendLine( $"Elapsed Time: {hours}h {minutes}m {seconds}s" );
+            displayMessage.AppendLine( "Members:" );
+
+            JArray associatedMembers = (JArray)prospectInfo["AssociatedMembers"];
+            foreach ( JObject member in associatedMembers )
+            {
+                displayMessage.AppendLine( $"- {member["AccountName"].Value<string>()} ({member["CharacterName"].Value<string>()}): {( member["IsCurrentlyPlaying"].Value<bool>() ? "Currently Playing" : "Offline" )}" );
+            }
+
+            return displayMessage.ToString();
+        }
+
+        public async Task<string> CreateBackupAsync( string steamUserId )
+        {
+            string filePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+            if ( !File.Exists( filePath ) )
+                return "Original save file not found.";
+
+            string backupFilePath = GenerateBackupFileName( filePath );
+
+            try
+            {
+                await Task.Run( () => File.Copy( filePath, backupFilePath, overwrite: false ) );
+                return $"Backup created successfully at {backupFilePath}";
+            }
+            catch ( Exception ex )
+            {
+                return $"Error creating backup: {ex.Message}";
+            }
+        }
+
+        public async Task<string> CheckForNewerVersionAsync( GoogleDriveService driveService, string steamUserId )
+        {
+            if ( string.IsNullOrWhiteSpace( steamUserId ) )
+                return "Steam ID not detected yet.";
+
+            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+
+            if ( !File.Exists( localFilePath ) )
+                return "Local save file not found.";
+
+            DateTime localFileModifiedTime = File.GetLastWriteTime( localFilePath );
+
+            var remoteFile = await driveService.GetFileInfoAsync( "Nebula Nokedli.json" ); // This is async
+
+            if ( remoteFile == null )
+                return "Error fetching the remote save file info.";
+
+            DateTime remoteFileModifiedTime = remoteFile.ModifiedTime.Value;
+
+            if ( remoteFileModifiedTime > localFileModifiedTime )
+                return "A newer version is available!";
+            else
+                return "You have the latest version.";
+        }
+        #endregion
+
+        #region Sync methods
         public Dictionary<string, string> DetectCurrentUser()
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
@@ -76,14 +158,14 @@ namespace ProspectSync.services
             if ( !File.Exists( filePath ) )
                 return "Error reading save file.";
 
-            string data = File.ReadAllText( filePath );
-            JObject saveInfo = JObject.Parse( data );
+            string data          = File.ReadAllText( filePath );
+            JObject saveInfo     = JObject.Parse( data );
             JObject prospectInfo = (JObject)saveInfo["ProspectInfo"];
 
             int elapsedTime = prospectInfo["ElapsedTime"].Value<int>();
-            int hours = elapsedTime / 3600;
-            int minutes = ( elapsedTime % 3600 ) / 60;
-            int seconds = elapsedTime % 60;
+            int hours       = elapsedTime / 3600;
+            int minutes     = ( elapsedTime % 3600 ) / 60;
+            int seconds     = elapsedTime % 60;
 
             StringBuilder displayMessage = new StringBuilder();
             displayMessage.AppendLine( $"Prospect Name: {prospectInfo["ProspectID"].Value<string>()}" );
@@ -120,6 +202,7 @@ namespace ProspectSync.services
             }
         }
 
+
         private string GenerateBackupFileName( string originalFilePath )
         {
             DateTime lastModified = File.GetLastWriteTime( originalFilePath );
@@ -154,5 +237,6 @@ namespace ProspectSync.services
             else
                 return "You have the latest version.";
         }
+        #endregion
     }
 }
