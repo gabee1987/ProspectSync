@@ -4,6 +4,7 @@ using System.Windows;
 using System.IO;
 using Newtonsoft.Json.Linq;
 using ProspectSync.services;
+using System;
 
 namespace ProspectSync
 {
@@ -49,7 +50,18 @@ namespace ProspectSync
 
         private void UploadButton_Click( object sender, RoutedEventArgs e )
         {
-            // Add logic for uploading the file
+            if ( string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
+            {
+                MessagesTextBox.Text = "Steam ID not detected yet.";
+                return;
+            }
+
+            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ),
+                "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
+
+            bool success = _driveService.UploadAndOverwrite( localFilePath, "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3" );
+
+            MessagesTextBox.Text = success ? "Upload successful!" : "Error during upload.";
         }
 
         private void BackupButton_Click( object sender, RoutedEventArgs e )
