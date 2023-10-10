@@ -21,7 +21,7 @@
 
         <!-- Logo Section -->
         <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Center" Margin="20,20,0,20">
-            <Image Source="assets/logo-mini-prospect-sync.png" Width="50" Height="50" Margin="0,0,10,0"/>
+            <Image Source="assets/logo-mini-prospect-sync.png" Width="100" Height="100" />
             <!--<TextBlock Text="Prospect Sync" FontSize="20" Foreground="#ffb71e" VerticalAlignment="Center"/>-->
         </StackPanel>
 

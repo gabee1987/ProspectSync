@@ -25,9 +25,9 @@
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
+                <!--<Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#d69303"/>
-                </Trigger>
+                </Trigger>-->
                 <Trigger Property="IsPressed" Value="True">
                     <Setter Property="Background" Value="#d69303"/>
                     <Setter Property="RenderTransform">
