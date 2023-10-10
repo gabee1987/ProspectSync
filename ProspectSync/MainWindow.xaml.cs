@@ -5,6 +5,7 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using ProspectSync.services;
 using System;
+using System.Threading.Tasks;
 
 namespace ProspectSync
 {
@@ -30,8 +31,12 @@ namespace ProspectSync
 
         private async void CheckButton_Click( object sender, RoutedEventArgs e )
         {
+            ShowProgressBar();
+
             string message       = await _appService.CheckForNewerVersionAsync( _driveService, CurrentSteamUserID );
             MessagesTextBox.Text = message;
+
+            HideProgressBar();
         }
 
         private async void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
@@ -51,10 +56,16 @@ namespace ProspectSync
                 return;
             }
 
+            ShowProgressBar();
+
             string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
-            var result           = await _driveService.DownloadAndOverwriteAsync( "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3", "Nebula Nokedli.json", localFilePath );
+
+            var result = await _driveService.DownloadAndOverwriteAsync( "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3", "Nebula Nokedli.json", localFilePath );
             MessagesTextBox.Text = result.Message;
+
+            HideProgressBar();
         }
+
 
         private async void UploadButton_Click( object sender, RoutedEventArgs e )
         {
@@ -64,12 +75,16 @@ namespace ProspectSync
                 return;
             }
 
+            ShowProgressBar();
+
             string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ),
                 "Icarus", "Saved", "PlayerData", CurrentSteamUserID, "Prospects", "Nebula Nokedli.json" );
 
             bool success = await _driveService.UploadAndOverwriteAsync( localFilePath, "1Gok2QUvgUwwZW3lyahQG7PYJ8weiGFx3" );
 
             MessagesTextBox.Text = success ? "Upload successful!" : "Error during upload.";
+
+            HideProgressBar();
         }
 
         private async void BackupButton_Click( object sender, RoutedEventArgs e )
@@ -98,5 +113,19 @@ namespace ProspectSync
                 UserInfo.Text = userInfoDict["Error"];
             }
         }
+
+        #region Helper Methods
+        private void ShowProgressBar()
+        {
+            ProcessProgressBar.Visibility      = Visibility.Visible;
+            ProcessProgressBar.IsIndeterminate = true;
+        }
+
+        private void HideProgressBar()
+        {
+            ProcessProgressBar.Visibility      = Visibility.Collapsed;
+            ProcessProgressBar.IsIndeterminate = false;
+        }
+        #endregion
     }
 }

@@ -40,6 +40,9 @@
 
         <!-- User Info -->
         <TextBox Name="UserInfo" Grid.Row="3" Margin="10" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" Style="{StaticResource TextBoxWithoutBorder}"></TextBox>
+
+        <!-- ProgressBar Section -->
+        <ProgressBar Name="ProcessProgressBar" Grid.Row="4" Margin="10,0,10,10" BorderThickness="0" Height="10" Background="Transparent" Foreground="#ffb71e" Maximum="100" HorizontalAlignment="Stretch" VerticalAlignment="Top" Visibility="Collapsed"/>
         
         <!-- Messages Section -->
         <TextBox Name="MessagesTextBox" Grid.Row="4" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
