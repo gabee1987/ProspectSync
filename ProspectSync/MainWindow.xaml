@@ -13,31 +13,36 @@
             <!-- Info Buttons -->
             <RowDefinition Height="Auto"/>
             <!-- Sync Buttons -->
+            <RowDefinition Height="Auto"/>
+            <!-- User Info -->
             <RowDefinition Height="1*"/>
             <!-- Messages -->
         </Grid.RowDefinitions>
 
         <!-- Logo Section -->
         <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Center" Margin="20,20,0,20">
-            <Image Source="assets/logo-mini-prospect-sync.png" Width="100" Height="100" Margin="0,0,10,0"/>
+            <Image Source="assets/logo-mini-prospect-sync.png" Width="50" Height="50" Margin="0,0,10,0"/>
             <!--<TextBlock Text="Prospect Sync" FontSize="20" Foreground="#ffb71e" VerticalAlignment="Center"/>-->
         </StackPanel>
 
         <!-- Info Buttons Section -->
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10">
-            <Button Content="Check for Newer Version" Name="CheckButton" Width="200" Margin="10" Padding="20,10" Click="CheckButton_Click" Style="{StaticResource AppButtonStyle}"/>
-            <Button Content="Get Local Save Info" Name="GetSaveInfoButton" Width="180" Margin="10" Padding="20,10" Click="GetSaveInfoButton_Click" Style="{StaticResource AppButtonStyle}" />
+            <Button Content="Check for Newer Version" Name="CheckButton" Width="200"     Click="CheckButton_Click" Style="{StaticResource AppButtonStyle}"/>
+            <Button Content="Get Local Save Info" Name="GetSaveInfoButton" Width="180" Click="GetSaveInfoButton_Click" Style="{StaticResource AppButtonStyle}" />
         </StackPanel>
 
         <!-- Sync Buttons Section -->
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="0,10">
-            <Button Content="Download" Name="DownloadButton" Width="80" Margin="10" Padding="20,10" Click="DownloadButton_Click" Style="{StaticResource AppButtonStyle}" />
-            <Button Content="Upload" Name="UploadButton" Width="80" Margin="10" Padding="20,10" Click="UploadButton_Click" Style="{StaticResource AppButtonStyle}" />
-            <Button Content="Create Backup" Name="BackupButton" Width="130" Margin="10" Padding="20,10" Click="BackupButton_Click" Style="{StaticResource AppButtonStyle}" />
+            <Button Content="Download" Name="DownloadButton" Width="100" Click="DownloadButton_Click" Style="{StaticResource AppButtonStyle}" />
+            <Button Content="Upload" Name="UploadButton" Width="100" Click="UploadButton_Click" Style="{StaticResource AppButtonStyle}" />
+            <Button Content="Create Backup" Name="BackupButton" Width="130" Click="BackupButton_Click" Style="{StaticResource AppButtonStyle}" />
         </StackPanel>
 
+        <!-- User Info -->
+        <TextBox Name="UserInfo" Grid.Row="3" Margin="10" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" Style="{StaticResource TextBoxWithoutBorder}"></TextBox>
+        
         <!-- Messages Section -->
-        <TextBox Name="MessagesTextBox" Grid.Row="3" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
+        <TextBox Name="MessagesTextBox" Grid.Row="4" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
 
     </Grid>
 </Window>

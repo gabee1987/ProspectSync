@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Apis.Auth" Version="1.62.1" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.62.0.3155" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>

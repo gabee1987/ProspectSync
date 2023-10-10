@@ -1,18 +1,9 @@
 ﻿using ProspectSync.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.IO;
+using Newtonsoft.Json.Linq;
+using ProspectSync.services;
 
 namespace ProspectSync
 {
@@ -22,6 +13,7 @@ namespace ProspectSync
     public partial class MainWindow : Window
     {
         private GoogleDriveService _driveService;
+        private readonly AppService _gameService = new AppService();
 
         public MainWindow()
         {
@@ -29,9 +21,43 @@ namespace ProspectSync
 
             // Initialize the Drive service
             _driveService = new GoogleDriveService( "credentials/icarussaveshare-82d0b173d4cf.json" );
+
+            // Get current Steam User
+            GetCurrentSteamUser();
         }
 
         private void CheckButton_Click( object sender, RoutedEventArgs e )
+        {
+            
+        }
+
+        private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
+        {
+            // Add logic for getting save info
+        }
+
+        private void DownloadButton_Click( object sender, RoutedEventArgs e )
+        {
+            // Add logic for downloading the file
+        }
+
+        private void UploadButton_Click( object sender, RoutedEventArgs e )
+        {
+            // Add logic for uploading the file
+        }
+
+        private void BackupButton_Click( object sender, RoutedEventArgs e )
+        {
+            // Add logic for creating a backup
+        }
+
+        private void GetCurrentSteamUser()
+        {
+            string userInfo = _gameService.DetectCurrentUser();
+            UserInfo.Text   = userInfo;
+        }
+
+        private void ListFileFromFolder()
         {
             // Fetch the list of files.
             var files = _driveService.ListFiles();
@@ -59,26 +85,6 @@ namespace ProspectSync
 
             // Set the text of the MessagesTextBox to the built message.
             MessagesTextBox.Text = messageBuilder.ToString();
-        }
-
-        private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
-        {
-            // Add logic for getting save info
-        }
-
-        private void DownloadButton_Click( object sender, RoutedEventArgs e )
-        {
-            // Add logic for downloading the file
-        }
-
-        private void UploadButton_Click( object sender, RoutedEventArgs e )
-        {
-            // Add logic for uploading the file
-        }
-
-        private void BackupButton_Click( object sender, RoutedEventArgs e )
-        {
-            // Add logic for creating a backup
         }
     }
 }
