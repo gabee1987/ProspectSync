@@ -53,7 +53,15 @@ namespace ProspectSync
 
         private void BackupButton_Click( object sender, RoutedEventArgs e )
         {
-            // Add logic for creating a backup
+            if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
+            {
+                string backupMessage = _gameService.CreateBackup( CurrentSteamUserID );
+                MessagesTextBox.Text = backupMessage;
+            }
+            else
+            {
+                MessagesTextBox.Text = "Steam ID not detected.";
+            }
         }
 
         private void GetCurrentSteamUser()

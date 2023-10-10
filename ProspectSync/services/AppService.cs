@@ -97,5 +97,33 @@ namespace ProspectSync.services
 
             return displayMessage.ToString();
         }
+
+
+        public string CreateBackup( string steamUserId )
+        {
+            string filePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+            if ( !File.Exists( filePath ) )
+                return "Original save file not found.";
+
+            string backupFilePath = GenerateBackupFileName( filePath );
+
+            try
+            {
+                File.Copy( filePath, backupFilePath, overwrite: false );
+                return $"Backup created successfully at {backupFilePath}";
+            }
+            catch ( Exception ex )
+            {
+                return $"Error creating backup: {ex.Message}";
+            }
+        }
+
+        private string GenerateBackupFileName( string originalFilePath )
+        {
+            DateTime lastModified = File.GetLastWriteTime( originalFilePath );
+            string dateStr = $"{lastModified.Year}_{lastModified.Month:00}_{lastModified.Day:00}_{lastModified.Hour:00}h_{lastModified.Minute:00}m_{lastModified.Second:00}s";
+            string backupFileName = Path.GetFileNameWithoutExtension( originalFilePath ) + $"_{dateStr}_backUp" + Path.GetExtension( originalFilePath );
+            return Path.Combine( Path.GetDirectoryName( originalFilePath ), backupFileName );
+        }
     }
 }
