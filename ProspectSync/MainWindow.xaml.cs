@@ -14,6 +14,7 @@ namespace ProspectSync
     {
         private GoogleDriveService _driveService;
         private readonly AppService _gameService = new AppService();
+        private string CurrentSteamUserID;
 
         public MainWindow()
         {
@@ -33,7 +34,11 @@ namespace ProspectSync
 
         private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
         {
-            // Add logic for getting save info
+            if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
+            {
+                string saveInfo = _gameService.GetLocalSaveInfo( CurrentSteamUserID );
+                MessagesTextBox.Text = saveInfo;
+            }
         }
 
         private void DownloadButton_Click( object sender, RoutedEventArgs e )
@@ -53,8 +58,16 @@ namespace ProspectSync
 
         private void GetCurrentSteamUser()
         {
-            string userInfo = _gameService.DetectCurrentUser();
-            UserInfo.Text   = userInfo;
+            var userInfoDict = _gameService.DetectCurrentUser();
+            if ( userInfoDict.ContainsKey( "User" ) && userInfoDict.ContainsKey( "SteamID" ) )
+            {
+                CurrentSteamUserID = userInfoDict["SteamID"];
+                UserInfo.Text    = $"User: {userInfoDict["User"]}\nSteam ID: {CurrentSteamUserID}";
+            }
+            else if ( userInfoDict.ContainsKey( "Error" ) )
+            {
+                UserInfo.Text = userInfoDict["Error"];
+            }
         }
 
         private void ListFileFromFolder()
