@@ -49,10 +49,15 @@ namespace ProspectSync.services
         public async Task<string> CreateBackupAsync( string steamUserId )
         {
             string filePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+
             if ( !File.Exists( filePath ) )
                 return "Original save file not found.";
 
             string backupFilePath = GenerateBackupFileName( filePath );
+
+            // Check if backup already exists
+            if ( File.Exists( backupFilePath ) )
+                return "Backup already exists. Skipping backup creation.";
 
             try
             {
