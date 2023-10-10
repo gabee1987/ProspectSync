@@ -27,7 +27,21 @@ namespace ProspectSync.Infrastructure
             } );
         }
 
-        // Here you will add methods for operations like Upload, Download, ListFiles, etc.
+        public Google.Apis.Drive.v3.Data.File GetFileInfo( string fileName )
+        {
+            var request = _service.Files.List();
+            request.Q = $"name = '{fileName}'";  // Query to search for a file by name
+            request.Fields = "files(id, name, modifiedTime)";  // We only want to fetch specific fields for the file
+
+            var files = request.Execute().Files;
+
+            if ( files != null && files.Count > 0 )
+            {
+                return files[0];  // Return the first matched file (assuming file names are unique in the Drive)
+            }
+
+            return null;
+        }
 
 
 

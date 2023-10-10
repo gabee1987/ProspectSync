@@ -13,7 +13,7 @@ namespace ProspectSync
     public partial class MainWindow : Window
     {
         private GoogleDriveService _driveService;
-        private readonly AppService _gameService = new AppService();
+        private readonly AppService _appService = new AppService();
         private string CurrentSteamUserID;
 
         public MainWindow()
@@ -29,14 +29,15 @@ namespace ProspectSync
 
         private void CheckButton_Click( object sender, RoutedEventArgs e )
         {
-            
+            string message = _appService.CheckForNewerVersion( _driveService, CurrentSteamUserID );
+            MessagesTextBox.Text = message;
         }
 
         private void GetSaveInfoButton_Click( object sender, RoutedEventArgs e )
         {
             if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
-                string saveInfo = _gameService.GetLocalSaveInfo( CurrentSteamUserID );
+                string saveInfo = _appService.GetLocalSaveInfo( CurrentSteamUserID );
                 MessagesTextBox.Text = saveInfo;
             }
         }
@@ -55,7 +56,7 @@ namespace ProspectSync
         {
             if ( !string.IsNullOrWhiteSpace( CurrentSteamUserID ) )
             {
-                string backupMessage = _gameService.CreateBackup( CurrentSteamUserID );
+                string backupMessage = _appService.CreateBackup( CurrentSteamUserID );
                 MessagesTextBox.Text = backupMessage;
             }
             else
@@ -66,7 +67,7 @@ namespace ProspectSync
 
         private void GetCurrentSteamUser()
         {
-            var userInfoDict = _gameService.DetectCurrentUser();
+            var userInfoDict = _appService.DetectCurrentUser();
             if ( userInfoDict.ContainsKey( "User" ) && userInfoDict.ContainsKey( "SteamID" ) )
             {
                 CurrentSteamUserID = userInfoDict["SteamID"];

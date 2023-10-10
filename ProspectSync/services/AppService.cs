@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Google.Apis.Drive.v3;
+using Newtonsoft.Json.Linq;
+using ProspectSync.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -124,6 +126,33 @@ namespace ProspectSync.services
             string dateStr = $"{lastModified.Year}_{lastModified.Month:00}_{lastModified.Day:00}_{lastModified.Hour:00}h_{lastModified.Minute:00}m_{lastModified.Second:00}s";
             string backupFileName = Path.GetFileNameWithoutExtension( originalFilePath ) + $"_{dateStr}_backUp" + Path.GetExtension( originalFilePath );
             return Path.Combine( Path.GetDirectoryName( originalFilePath ), backupFileName );
+        }
+
+
+        public string CheckForNewerVersion( GoogleDriveService driveService, string steamUserId )
+        {
+            if ( string.IsNullOrWhiteSpace( steamUserId ) )
+                return "Steam ID not detected yet.";
+
+            string localFilePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
+
+            // Check if local file exists before comparing modification dates
+            if ( !File.Exists( localFilePath ) )
+                return "Local save file not found.";
+
+            DateTime localFileModifiedTime = File.GetLastWriteTime( localFilePath );
+
+            var remoteFile = driveService.GetFileInfo( "Nebula Nokedli.json" );
+
+            if ( remoteFile == null )
+                return "Error fetching the remote save file info.";
+
+            DateTime remoteFileModifiedTime = remoteFile.ModifiedTime.Value;
+
+            if ( remoteFileModifiedTime > localFileModifiedTime )
+                return "A newer version is available!";
+            else
+                return "You have the latest version.";
         }
     }
 }
