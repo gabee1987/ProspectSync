@@ -47,5 +47,14 @@
         <!-- Messages Section -->
         <TextBox Name="MessagesTextBox" Grid.Row="4" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
 
+        <Grid Grid.RowSpan="5" Name="PasswordOverlay" Background="#DD293846">
+            <!-- The AA adds some transparency -->
+            <!-- Centered content for password entry -->
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <PasswordBox Name="PasswordInputBox" Width="200" Height="30" MaxLength="50" Style="{StaticResource RoundedPasswordBox}" />
+                <Button Content="Unlock" Click="UnlockButton_Click" Width="80" Margin="10,0,0,0" Style="{StaticResource AppButtonStyle}" />
+                <TextBox Name="PasswordMessageTextBox" Grid.Row="4" Margin="10" IsReadOnly="True" Background="#293846" Foreground="#ffb71e" BorderBrush="#4e5d6b" BorderThickness="1" FontSize="14" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Style="{StaticResource RoundedTextBox}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

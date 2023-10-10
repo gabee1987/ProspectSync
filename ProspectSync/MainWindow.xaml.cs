@@ -6,6 +6,8 @@ using Newtonsoft.Json.Linq;
 using ProspectSync.services;
 using System;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Security.Cryptography;
 
 namespace ProspectSync
 {
@@ -21,9 +23,6 @@ namespace ProspectSync
         public MainWindow()
         {
             InitializeComponent();
-
-            // Initialize the Drive service
-            _driveService = new GoogleDriveService( "credentials/icarussaveshare-82d0b173d4cf.json" );
 
             // Get current Steam User
             GetCurrentSteamUser();
@@ -98,6 +97,50 @@ namespace ProspectSync
             {
                 MessagesTextBox.Text = "Steam ID not detected.";
             }
+        }
+
+        private async void UnlockButton_Click( object sender, RoutedEventArgs e )
+        {
+            // Assuming your encrypted credentials file is named "encrypted_credentials"
+            string encryptedCredentialsPath = System.IO.Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "credentials", "icarussaveshare-82d0b173d4cf.json" );
+
+            if ( !File.Exists( encryptedCredentialsPath ) )
+            {
+                PasswordMessageTextBox.Text = "Error: Encrypted credentials file not found.";
+                return;
+            }
+
+            byte[] encryptedCredentials = File.ReadAllBytes( encryptedCredentialsPath );
+
+            // Decrypt the credentials
+            var securityService = new SecurityService();
+            string decryptedCredentials = "";
+
+            try
+            {
+                decryptedCredentials = securityService.DecryptStringFromBytes_Aes( encryptedCredentials, PasswordInputBox.Password );
+            }
+            catch ( CryptographicException )
+            {
+                PasswordMessageTextBox.Text = "Invalid password or corrupted data";
+            }
+            catch ( Exception ex )
+            {
+                PasswordMessageTextBox.Text = $"Error decrypting credentials: {ex.Message}";
+                return;
+            }
+
+            if ( string.IsNullOrEmpty( decryptedCredentials ) )
+            {
+                PasswordMessageTextBox.Text = "Invalid password. Please try again.";
+                return;
+            }
+
+            // At this point, we have successfully decrypted the credentials
+            PasswordOverlay.Visibility = Visibility.Collapsed;
+
+            // Initialize the GoogleDriveService with decrypted credentials
+            _driveService = new GoogleDriveService( decryptedCredentials );
         }
 
         private void GetCurrentSteamUser()

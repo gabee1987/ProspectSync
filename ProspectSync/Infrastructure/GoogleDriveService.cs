@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ProspectSync.Infrastructure
@@ -17,10 +18,12 @@ namespace ProspectSync.Infrastructure
         #region Init
         private readonly DriveService _driveService;
 
-        public GoogleDriveService( string serviceAccountPath )
+        public GoogleDriveService( string serviceAccountContent )
         {
             GoogleCredential credential;
-            using ( var stream = new FileStream( serviceAccountPath, FileMode.Open, FileAccess.Read ) )
+
+            // Convert the content into a stream
+            using ( var stream = new MemoryStream( Encoding.UTF8.GetBytes( serviceAccountContent ) ) )
             {
                 credential = GoogleCredential.FromStream( stream )
                     .CreateScoped( DriveService.Scope.Drive );
