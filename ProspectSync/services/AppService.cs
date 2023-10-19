@@ -11,6 +11,13 @@ namespace ProspectSync.services
 {
     internal class AppService
     {
+        private static readonly HashSet<string> KnownSteamIDs = new HashSet<string>
+        {
+            "76561197970909442",
+            "76561198046379424",
+            "76561198052813074"
+        };
+
         #region Async methods
         public async Task<string> GetLocalSaveInfoAsync( string steamUserId )
         {
@@ -104,51 +111,49 @@ namespace ProspectSync.services
             string gameDataPath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData" );
             var steamIdDirectories = Directory.GetDirectories( gameDataPath );
 
-            if ( steamIdDirectories.Length == 1 )
+            if ( steamIdDirectories.Length != 1 )
             {
-                var steamIdDir = new DirectoryInfo( steamIdDirectories[0] );
-                string steamId = steamIdDir.Name;
+                result["Error"] = "More than 1 steamId's were found, multiple steam accounts not supperted.";
+                return result;
+            }
 
-                string saveFilePath = Path.Combine( gameDataPath, steamId, "Prospects", "Nebula Nokedli.json" );
+            var steamIdDir = new DirectoryInfo( steamIdDirectories[0] );
+            string steamId = steamIdDir.Name;
 
-                if ( File.Exists( saveFilePath ) )
+            string saveFilePath = Path.Combine( gameDataPath, steamId, "Prospects", "Nebula Nokedli.json" );
+
+            if ( File.Exists( saveFilePath ) )
+            {
+                string fileContents      = File.ReadAllText( saveFilePath );
+                JObject saveInfo         = JObject.Parse( fileContents );
+                JToken associatedMembers = saveInfo["ProspectInfo"]["AssociatedMembers"];
+
+                if ( associatedMembers is JArray members )
                 {
-                    string fileContents = File.ReadAllText( saveFilePath );
-                    JObject saveInfo = JObject.Parse( fileContents );
-                    JToken associatedMembers = saveInfo["ProspectInfo"]["AssociatedMembers"];
-
-                    if ( associatedMembers is JArray members )
+                    foreach ( JToken member in members )
                     {
-                        foreach ( JToken member in members )
+                        if ( member["UserID"].ToString() == steamId )
                         {
-                            if ( member["UserID"].ToString() == steamId )
-                            {
-                                string userName = member["AccountName"].ToString();
-                                result["User"] = userName;
-                                result["SteamID"] = steamId;
-                                return result;
-                            }
+                            string userName   = member["AccountName"].ToString();
+                            result["User"]    = userName;
+                            result["SteamID"] = steamId;
+                            return result;
                         }
-                        result["SteamID"] = steamId;
-                        result["Note"] = "User not found in save file.";
-                        return result;
                     }
-                }
-                else
-                {
                     result["SteamID"] = steamId;
-                    result["Error"] = "Save file not found.";
+                    result["Note"]    = "User not found in save file.";
                     return result;
                 }
             }
             else
             {
-                result["Error"] = "No Steam ID detected.";
+                result["SteamID"] = steamId;
+                result["Error"]   = "Save file not found.";
                 return result;
             }
 
-            // Default return
-            result["Error"] = "Unknown error.";
+            // If you reached here without returning, no known Steam ID was found.
+            result["Error"] = "No recognized Steam ID detected.";
             return result;
         }
 
@@ -211,9 +216,18 @@ namespace ProspectSync.services
         private string GenerateBackupFileName( string originalFilePath )
         {
             DateTime lastModified = File.GetLastWriteTime( originalFilePath );
-            string dateStr = $"{lastModified.Year}_{lastModified.Month:00}_{lastModified.Day:00}_{lastModified.Hour:00}h_{lastModified.Minute:00}m_{lastModified.Second:00}s";
+            string dateStr        = $"{lastModified.Year}_{lastModified.Month:00}_{lastModified.Day:00}_{lastModified.Hour:00}h_{lastModified.Minute:00}m_{lastModified.Second:00}s";
             string backupFileName = Path.GetFileNameWithoutExtension( originalFilePath ) + $"_{dateStr}_backUp" + Path.GetExtension( originalFilePath );
-            return Path.Combine( Path.GetDirectoryName( originalFilePath ), backupFileName );
+
+            // If BackUp folder doesn't exist, create it
+            string backupDirectory = Path.Combine( Path.GetDirectoryName( originalFilePath ), "BackUp" );
+            if ( !Directory.Exists( backupDirectory ) )
+            {
+                Directory.CreateDirectory( backupDirectory );
+            }
+
+            var test = Path.Combine( backupDirectory, backupFileName );
+            return Path.Combine( backupDirectory, backupFileName );
         }
 
 
