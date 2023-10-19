@@ -33,15 +33,13 @@ namespace ProspectSync.services
             JObject saveInfo     = JObject.Parse( data );
             JObject prospectInfo = (JObject)saveInfo["ProspectInfo"];
 
-            int elapsedTime = prospectInfo["ElapsedTime"].Value<int>();
-            int hours       = elapsedTime / 3600;
-            int minutes     = ( elapsedTime % 3600 ) / 60;
-            int seconds     = elapsedTime % 60;
+            int elapsedTime            = prospectInfo["ElapsedTime"].Value<int>();
+            string readableElapsedTime = TimeHelpers.ConvertSecondsToReadableTime( elapsedTime );
 
             StringBuilder displayMessage = new StringBuilder();
             displayMessage.AppendLine( $"Prospect Name: {prospectInfo["ProspectID"].Value<string>()}" );
             displayMessage.AppendLine( $"Difficulty: {prospectInfo["Difficulty"].Value<string>()}" );
-            displayMessage.AppendLine( $"Elapsed Time: {hours}h {minutes}m {seconds}s" );
+            displayMessage.AppendLine( $"Elapsed Time: {readableElapsedTime}" );
             displayMessage.AppendLine( "Members:" );
 
             JArray associatedMembers = (JArray)prospectInfo["AssociatedMembers"];
@@ -87,19 +85,27 @@ namespace ProspectSync.services
             if ( !File.Exists( localFilePath ) )
                 return "Local save file not found.";
 
-            DateTime localFileModifiedTime = File.GetLastWriteTime( localFilePath );
+            int localElapsedTime     = GetElapsedTimeFromSave( localFilePath );
+            string localReadableTime = TimeHelpers.ConvertSecondsToReadableTime( localElapsedTime );
 
-            var remoteFile = await driveService.GetFileInfoAsync( "Nebula Nokedli.json" ); // This is async
+            var remoteFile = await driveService.GetFileInfoAsync( "Nebula Nokedli.json" );
 
             if ( remoteFile == null )
                 return "Error fetching the remote save file info.";
 
-            DateTime remoteFileModifiedTime = remoteFile.ModifiedTime.Value;
+            string remoteFileContent = await driveService.GetFileContentAsync( remoteFile.Id );
 
-            if ( remoteFileModifiedTime > localFileModifiedTime )
-                return "A newer version is available!";
+            if ( string.IsNullOrEmpty( remoteFileContent ) )
+                return "Error fetching the remote save file content.";
+
+            JObject remoteSaveInfo    = JObject.Parse( remoteFileContent );
+            int remoteElapsedTime     = remoteSaveInfo["ProspectInfo"]["ElapsedTime"].Value<int>();
+            string remoteReadableTime = TimeHelpers.ConvertSecondsToReadableTime( remoteElapsedTime );
+
+            if ( remoteElapsedTime > localElapsedTime )
+                return $"A newer version is available on the cloud with {remoteReadableTime} elapsed time. Your local version has {localReadableTime} elapsed time.";
             else
-                return "You have the latest version.";
+                return $"You have the latest version with {localReadableTime} elapsed time. Cloud version has {remoteReadableTime} elapsed time.";
         }
         #endregion
 
@@ -165,25 +171,18 @@ namespace ProspectSync.services
 
             string filePath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.LocalApplicationData ), "Icarus", "Saved", "PlayerData", steamUserId, "Prospects", "Nebula Nokedli.json" );
 
-            if ( !File.Exists( filePath ) )
-                return "Error reading save file.";
-
-            string data          = File.ReadAllText( filePath );
-            JObject saveInfo     = JObject.Parse( data );
-            JObject prospectInfo = (JObject)saveInfo["ProspectInfo"];
-
-            int elapsedTime = prospectInfo["ElapsedTime"].Value<int>();
+            int elapsedTime = GetElapsedTimeFromSave( filePath );
             int hours       = elapsedTime / 3600;
             int minutes     = ( elapsedTime % 3600 ) / 60;
             int seconds     = elapsedTime % 60;
 
             StringBuilder displayMessage = new StringBuilder();
-            displayMessage.AppendLine( $"Prospect Name: {prospectInfo["ProspectID"].Value<string>()}" );
-            displayMessage.AppendLine( $"Difficulty: {prospectInfo["Difficulty"].Value<string>()}" );
+            displayMessage.AppendLine( $"Prospect Name: {JObject.Parse( File.ReadAllText( filePath ) )["ProspectInfo"]["ProspectID"].Value<string>()}" );
+            displayMessage.AppendLine( $"Difficulty: {JObject.Parse( File.ReadAllText( filePath ) )["ProspectInfo"]["Difficulty"].Value<string>()}" );
             displayMessage.AppendLine( $"Elapsed Time: {hours}h {minutes}m {seconds}s" );
             displayMessage.AppendLine( "Members:" );
 
-            JArray associatedMembers = (JArray)prospectInfo["AssociatedMembers"];
+            JArray associatedMembers = (JArray)JObject.Parse( File.ReadAllText( filePath ) )["ProspectInfo"]["AssociatedMembers"];
             foreach ( JObject member in associatedMembers )
             {
                 displayMessage.AppendLine( $"- {member["AccountName"].Value<string>()} ({member["CharacterName"].Value<string>()}): {( member["IsCurrentlyPlaying"].Value<bool>() ? "Currently Playing" : "Offline" )}" );
@@ -215,18 +214,20 @@ namespace ProspectSync.services
 
         private string GenerateBackupFileName( string originalFilePath )
         {
-            DateTime lastModified = File.GetLastWriteTime( originalFilePath );
-            string dateStr        = $"{lastModified.Year}_{lastModified.Month:00}_{lastModified.Day:00}_{lastModified.Hour:00}h_{lastModified.Minute:00}m_{lastModified.Second:00}s";
-            string backupFileName = Path.GetFileNameWithoutExtension( originalFilePath ) + $"_{dateStr}_backUp" + Path.GetExtension( originalFilePath );
+            int elapsedTime       = GetElapsedTimeFromSave( originalFilePath );
+            string elapsedTimeStr = elapsedTime.ToString( "D8" );  // Format the integer with leading zeros.
+
+            string backupFileName = Path.GetFileNameWithoutExtension( originalFilePath ) + $"_{elapsedTimeStr}_backUp" + Path.GetExtension( originalFilePath );
+
+            // Determine backup directory
+            string backupDirectory = Path.Combine( Path.GetDirectoryName( originalFilePath ), "BackUp" );
 
             // If BackUp folder doesn't exist, create it
-            string backupDirectory = Path.Combine( Path.GetDirectoryName( originalFilePath ), "BackUp" );
             if ( !Directory.Exists( backupDirectory ) )
             {
                 Directory.CreateDirectory( backupDirectory );
             }
 
-            var test = Path.Combine( backupDirectory, backupFileName );
             return Path.Combine( backupDirectory, backupFileName );
         }
 
@@ -255,6 +256,29 @@ namespace ProspectSync.services
                 return "A newer version is available!";
             else
                 return "You have the latest version.";
+        }
+
+        public int GetElapsedTimeFromSave( string filePath )
+        {
+            if ( !File.Exists( filePath ) )
+                throw new Exception( "Error reading save file." );
+
+            string data          = File.ReadAllText( filePath );
+            JObject saveInfo     = JObject.Parse( data );
+            JObject prospectInfo = (JObject)saveInfo["ProspectInfo"];
+
+            return prospectInfo["ElapsedTime"].Value<int>();
+        }
+
+        public static class TimeHelpers
+        {
+            public static string ConvertSecondsToReadableTime( int seconds )
+            {
+                int hours   = seconds / 3600;
+                int minutes = ( seconds % 3600 ) / 60;
+                seconds     = seconds % 60;
+                return $"{hours}h {minutes}m {seconds}s";
+            }
         }
         #endregion
     }

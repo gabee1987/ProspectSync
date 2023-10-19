@@ -40,12 +40,29 @@ namespace ProspectSync.Infrastructure
         #region Async methods
         public async Task<Google.Apis.Drive.v3.Data.File> GetFileInfoAsync( string fileName )
         {
-            var request = _driveService.Files.List();
+            var request    = _driveService.Files.List();
             request.Q      = $"name = '{fileName}'";
             request.Fields = "files(id, name, modifiedTime)";
 
             var files = await request.ExecuteAsync();
             return files.Files?.FirstOrDefault();
+        }
+
+        public async Task<string> GetFileContentAsync( string fileId )
+        {
+            try
+            {
+                var request = _driveService.Files.Get( fileId );
+                var stream  = new MemoryStream();
+                await request.DownloadAsync( stream );
+
+                return Encoding.UTF8.GetString( stream.ToArray() );
+            }
+            catch ( Exception ex )
+            {
+                Console.WriteLine( $"Error fetching file content: {ex.Message}" );
+                return null;
+            }
         }
 
         public async Task<string> GetFileIdByNameAsync( string fileName )
